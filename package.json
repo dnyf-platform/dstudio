@@ -1,15 +1,18 @@
 {
+  "name": "dstudio",
+  "version": "1.0.0",
+  "description": "DStudio - Professional Code Editor & Development Environment",
   "homepage": "https://dnyf-platform.github.io/dstudio",
   "scripts": {
     "start": "node server.js",
     "deploy": "gh-pages -d .",
-    "build": "echo 'Ready'"
+    "build": "echo 'DStudio is ready'"
+  },
+  "devDependencies": {
+    "gh-pages": "^5.0.0"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "gh-pages": "^5.0.0"  # NEW
   }
 }
