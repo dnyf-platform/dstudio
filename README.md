@@ -44,7 +44,7 @@
 
 1. **Clone or download the project**
 ```bash
-git clone https://github.com/ceezix/dstudio.git
+git clone https://github.com/dnyf-platform/dstudio.git
 cd dstudio
 ```
 
@@ -292,8 +292,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support & Contact
 
 - 📧 Email: support@dstudio.app
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/dstudio/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/ceezix/dstudio/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/dnyf-platform/dstudio/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/dnyf-platform/dstudio/discussions)
 
 ## 🗺️ Roadmap
 
