@@ -1,28 +1,15 @@
 {
-  "name": "dstudio",
-  "version": "1.0.0",
-  "description": "DStudio - Professional Code Editor & Development Environment",
-  "type": "module",
+  "homepage": "https://dnyf-platform.github.io/dstudio",
   "scripts": {
-    "dev": "node server.js",
     "start": "node server.js",
-    "serve": "npx http-server .",
-    "build": "echo 'Static web application'"
+    "deploy": "gh-pages -d .",
+    "build": "echo 'Ready'"
   },
-  "keywords": [
-    "editor",
-    "ide",
-    "web",
-    "pwa",
-    "development"
-  ],
-  "author": "DStudio Team",
-  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {
-    "gh-pages": "^6.3.0",
-    "http-server": "^14.1.1"
-  },
-  "engines": {
-    "node": ">=18"
+    "gh-pages": "^5.0.0"  # NEW
   }
 }
