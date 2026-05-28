@@ -1,46 +1,28 @@
 {
   "name": "dstudio",
   "version": "1.0.0",
-  "description": "DStudio - Professional Code Editor & Development Environment for building web projects",
+  "description": "DStudio - Professional Code Editor & Development Environment",
   "type": "module",
-  "main": "index.html",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "echo 'DStudio is a web-based editor. No build step required.'",
-    "serve": "npx http-server"
+    "serve": "npx http-server .",
+    "build": "echo 'Static web application'"
   },
   "keywords": [
-    "code-editor",
-    "web-development",
-    "html",
-    "css",
-    "javascript",
+    "editor",
     "ide",
-    "development-environment",
-    "web-builder",
-    "online-editor",
-    "pwa"
+    "web",
+    "pwa",
+    "development"
   ],
   "author": "DStudio Team",
   "license": "MIT",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "http-server": "^14.1.1"
   },
   "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/dstudio"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/dstudio/issues"
-  },
-  "homepage": "https://dstudio.app"
+    "node": ">=18"
+  }
 }
