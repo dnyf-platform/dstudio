@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>DStudio · WebView Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0e27;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            font-family: system-ui, sans-serif;
+        }
+        .toolbar {
+            background: #11162f;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .title {
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .btn {
+            background: #4f46e5;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #4f46e5;
+        }
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: white;
+        }
+        @media (max-width: 600px) {
+            .toolbar { padding: 10px 12px; }
+            .btn { padding: 6px 14px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="toolbar">
+    <span class="title">📱 DStudio WebView Preview</span>
+    <div>
+        <button class="btn btn-outline" id="refreshBtn">⟳ Refresh</button>
+        <button class="btn" id="backBtn">← Back to Editor</button>
+    </div>
+</div>
+<iframe id="previewFrame" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>
+
+<script>
+    const iframe = document.getElementById('previewFrame');
+
+    function loadPreview() {
+        let html = sessionStorage.getItem('dstudio_webview_html');
+        if (html) {
+            iframe.srcdoc = html;
+            console.log('WebView loaded from session');
+        } else {
+            // fallback: read from localStorage
+            const project = localStorage.getItem('dstudio_full_project');
+            if (project) {
+                try {
+                    const data = JSON.parse(project);
+                    const htmlFile = data.files?.find(f => f.name === 'index.html')?.content || '<h1>No index.html</h1>';
+                    const cssFile = data.files?.find(f => f.name === 'style.css')?.content || '';
+                    const jsFile = data.files?.find(f => f.name === 'app.js')?.content || '';
+                    const fullDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${cssFile}</style></head><body>${htmlFile}<script>${jsFile}<\/script></body></html>`;
+                    iframe.srcdoc = fullDoc;
+                } catch(e) { showError(); }
+            } else {
+                showError();
+            }
+        }
+    }
+
+    function showError() {
+        iframe.srcdoc = '<html><body style="background:#0f172a; color:white; display:flex; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;">⚠️ No preview data. Go back to DStudio editor and click Run (WebView).</body></html>';
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => loadPreview());
+    document.getElementById('backBtn').addEventListener('click', () => {
+        // Close this tab/window – returns to editor
+        window.close();
+        // fallback: if window.close() fails (some browsers), provide a link
+        alert('If the tab does not close automatically, switch back to the DStudio tab.');
+    });
+
+    loadPreview();
+</script>
+</body>
+</html>
