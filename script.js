@@ -1,0 +1,1 @@
+/* Copy the entire JavaScript from above and paste here */
