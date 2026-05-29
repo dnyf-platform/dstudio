@@ -1,130 +1,358 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
 const MIME_TYPES = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.jsx': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
+  '.html': 'text/html; charset=UTF-8',
+  '.js': 'application/javascript; charset=UTF-8',
+  '.mjs': 'application/javascript; charset=UTF-8',
+  '.jsx': 'application/javascript; charset=UTF-8',
+  '.css': 'text/css; charset=UTF-8',
+  '.json': 'application/json; charset=UTF-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
-  '.md': 'text/markdown',
-  '.txt': 'text/plain',
+  '.webp': 'image/webp',
+  '.txt': 'text/plain; charset=UTF-8',
+  '.md': 'text/markdown; charset=UTF-8',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
   '.eot': 'application/vnd.ms-fontobject'
 };
 
-const server = http.createServer((req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
 
-  // Handle OPTIONS
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-
-  // Parse URL
-  let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
-  const ext = path.extname(filePath).toLowerCase();
-
-  // Prevent directory traversal
-  const realPath = path.resolve(filePath);
-  if (!realPath.startsWith(__dirname)) {
-    res.writeHead(403, { 'Content-Type': 'text/plain' });
-    res.end('Forbidden');
-    return;
-  }
-
-  // Serve static files
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      // If file not found, serve index.html for SPA routing
-      if (err.code === 'ENOENT' && req.url !== '/manifest.json') {
-        fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
-          if (err) {
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
-            res.end('Internal Server Error');
-            return;
-          }
-          res.writeHead(200, { 
-            'Content-Type': 'text/html',
-            'Cache-Control': 'no-cache'
-          });
-          res.end(data);
-        });
-      } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('404 Not Found');
+  for (const name of Object.keys(interfaces)) {
+    for (const net of interfaces[name]) {
+      if (
+        net.family === 'IPv4' &&
+        !net.internal
+      ) {
+        return net.address;
       }
-      return;
     }
+  }
 
-    const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
-    const cacheControl = ext === '.html' ? 'no-cache' : 'public, max-age=3600';
+  return '127.0.0.1';
+}
 
-    res.writeHead(200, {
-      'Content-Type': mimeType,
-      'Cache-Control': cacheControl,
-      'X-Content-Type-Options': 'nosniff'
-    });
-    res.end(data);
+function sendResponse(
+  res,
+  statusCode,
+  content,
+  contentType = 'text/plain'
+) {
+  res.writeHead(statusCode, {
+    'Content-Type': contentType,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods':
+      'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type',
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-cache'
   });
-});
 
-server.listen(PORT, () => {
+  res.end(content);
+}
+
+function safePath(urlPath) {
+  const decoded = decodeURIComponent(urlPath);
+
+  const cleanPath =
+    decoded === '/'
+      ? '/index.html'
+      : decoded;
+
+  return path.normalize(
+    path.join(__dirname, cleanPath)
+  );
+}
+
+const server = http.createServer(
+  (req, res) => {
+    try {
+      console.log(
+        `[${new Date().toISOString()}] ${req.method} ${req.url}`
+      );
+
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin':
+            '*',
+          'Access-Control-Allow-Methods':
+            'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers':
+            'Content-Type'
+        });
+
+        return res.end();
+      }
+
+      // Reject invalid methods
+      const allowedMethods = [
+        'GET',
+        'HEAD'
+      ];
+
+      if (
+        !allowedMethods.includes(req.method)
+      ) {
+        return sendResponse(
+          res,
+          405,
+          'Method Not Allowed'
+        );
+      }
+
+      let filePath = safePath(req.url);
+
+      // Prevent directory traversal
+      if (
+        !filePath.startsWith(__dirname)
+      ) {
+        return sendResponse(
+          res,
+          403,
+          '403 Forbidden'
+        );
+      }
+
+      // Auto fallback to index.html
+      if (
+        !path.extname(filePath)
+      ) {
+        filePath = path.join(
+          filePath,
+          'index.html'
+        );
+      }
+
+      fs.stat(filePath, (err, stats) => {
+        if (
+          err ||
+          !stats.isFile()
+        ) {
+          // SPA fallback
+          const fallbackPath =
+            path.join(
+              __dirname,
+              'index.html'
+            );
+
+          return fs.readFile(
+            fallbackPath,
+            (fallbackErr, fallbackData) => {
+              if (fallbackErr) {
+                console.error(
+                  'Fallback Error:',
+                  fallbackErr
+                );
+
+                return sendResponse(
+                  res,
+                  500,
+                  '500 Internal Server Error'
+                );
+              }
+
+              return sendResponse(
+                res,
+                200,
+                fallbackData,
+                'text/html; charset=UTF-8'
+              );
+            }
+          );
+        }
+
+        fs.readFile(
+          filePath,
+          (readErr, data) => {
+            if (readErr) {
+              console.error(
+                'Read Error:',
+                readErr
+              );
+
+              return sendResponse(
+                res,
+                500,
+                '500 Internal Server Error'
+              );
+            }
+
+            const ext =
+              path.extname(filePath)
+                .toLowerCase();
+
+            const mimeType =
+              MIME_TYPES[ext] ||
+              'application/octet-stream';
+
+            const cacheControl =
+              ext === '.html'
+                ? 'no-cache'
+                : 'public, max-age=3600';
+
+            res.writeHead(200, {
+              'Content-Type':
+                mimeType,
+              'Cache-Control':
+                cacheControl,
+              'Access-Control-Allow-Origin':
+                '*',
+              'X-Content-Type-Options':
+                'nosniff'
+            });
+
+            if (
+              req.method === 'HEAD'
+            ) {
+              return res.end();
+            }
+
+            res.end(data);
+          }
+        );
+      });
+    } catch (error) {
+      console.error(
+        'Fatal Server Error:',
+        error
+      );
+
+      return sendResponse(
+        res,
+        500,
+        '500 Internal Server Error'
+      );
+    }
+  }
+);
+
+server.listen(PORT, HOST, () => {
+  const localIP = getLocalIP();
+
+  console.clear();
+
   console.log(`
-╔════════════════════════════════════════════════════════════╗
-║                                                            ║
-║          🚀 DStudio - Code Editor & IDE Started 🚀        ║
-║                                                            ║
-╠════════════════════════════════════════════════════════════╣
-║                                                            ║
-║  📍 Server Running at: http://localhost:${PORT}                  ║
-║  🌐 Open your browser and navigate to: http://localhost:${PORT} ║
-║                                                            ║
-║  Features:                                                 ║
-║  ✓ Live Code Editor (HTML, CSS, JavaScript)              ║
-║  ✓ Real-time Preview                                     ║
-║  ✓ Project Management                                    ║
-║  ✓ Built-in Console                                      ║
-║  ✓ File Explorer                                         ║
-║                                                            ║
-║  Commands:                                                ║
-║  • Press Ctrl+C to stop the server                       ║
-║  • Refresh browser for live updates                      ║
-║                                                            ║
-╚════════════════════════════════════════════════════════════╝
-  `);
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║     ██████╗ ███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗                  ║
+║     ██╔══██╗██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗                 ║
+║     ██║  ██║███████╗   ██║   ██║   ██║██║  ██║██║██║   ██║                 ║
+║     ██║  ██║╚════██║   ██║   ██║   ██║██║  ██║██║██║   ██║                 ║
+║     ██████╔╝███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝                 ║
+║     ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝                  ║
+║                                                                              ║
+║                ⚡ ADVANCED WEB DEVELOPMENT ENVIRONMENT ⚡                    ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║   🌐 LOCAL ACCESS                                                            ║
+║   ├── http://localhost:${PORT}
+║   └── http://127.0.0.1:${PORT}
+║                                                                              ║
+║   📡 NETWORK ACCESS                                                          ║
+║   └── http://${localIP}:${PORT}
+║                                                                              ║
+║   🧠 SERVER ENGINE                                                           ║
+║   ├── Runtime        : Node.js                                               ║
+║   ├── Architecture   : SPA Static Engine                                     ║
+║   ├── Status         : ONLINE                                                ║
+║   ├── Security       : Path Shield Active                                    ║
+║   ├── CORS           : Enabled                                               ║
+║   └── Cache Layer    : Optimized                                             ║
+║                                                                              ║
+║   🚀 CORE FEATURES                                                           ║
+║   ├── Live HTML/CSS/JS Execution                                             ║
+║   ├── Real-Time Preview Sandbox                                              ║
+║   ├── File Explorer System                                                   ║
+║   ├── Smart MIME Detection                                                   ║
+║   ├── Mobile Device Compatible                                               ║
+║   ├── Error Recovery Pipeline                                                ║
+║   └── Production Ready Routing                                               ║
+║                                                                              ║
+║   ⚙️  COMMANDS                                                               ║
+║   ├── Ctrl + C    → Stop Server                                              ║
+║   ├── Refresh UI  → Reload Workspace                                         ║
+║   └── Edit Files  → Auto Deploy Preview                                      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+        ██████╗ ███████╗██╗   ██╗
+        ██╔══██╗██╔════╝██║   ██║
+        ██║  ██║█████╗  ██║   ██║
+        ██║  ██║██╔══╝  ╚██╗ ██╔╝
+        ██████╔╝███████╗ ╚████╔╝
+        ╚═════╝ ╚══════╝  ╚═══╝
+
+              ⚡ DStudio Engine Ready ⚡
+
+`);
 });
 
-process.on('SIGTERM', () => {
-  console.log('\n✋ Server shutting down...');
-  server.close(() => {
-    console.log('✅ Server closed');
-    process.exit(0);
-  });
-});
+function shutdown(signal) {
+  console.log(
+    `\n⚠️ ${signal} received. Shutting down...`
+  );
 
-process.on('SIGINT', () => {
-  console.log('\n✋ Server interrupted...');
   server.close(() => {
-    console.log('✅ Server closed');
+    console.log(
+      '✅ DStudio server stopped cleanly.'
+    );
+
     process.exit(0);
   });
-});
+
+  setTimeout(() => {
+    console.error(
+      '❌ Force shutdown.'
+    );
+
+    process.exit(1);
+  }, 5000);
+}
+
+process.on('SIGINT', () =>
+  shutdown('SIGINT')
+);
+
+process.on('SIGTERM', () =>
+  shutdown('SIGTERM')
+);
+
+process.on(
+  'uncaughtException',
+  (err) => {
+    console.error(
+      '❌ Uncaught Exception:',
+      err
+    );
+  }
+);
+
+process.on(
+  'unhandledRejection',
+  (reason) => {
+    console.error(
+      '❌ Unhandled Rejection:',
+      reason
+    );
+  }
+);
