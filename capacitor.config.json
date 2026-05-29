@@ -1,0 +1,16 @@
+// capacitor.config.json - For building native Android APK using Capacitor
+{
+  "appId": "io.dstudio.ide",
+  "appName": "DStudio IDE",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": { "androidScheme": "https" },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 0 }
+  }
+}
