@@ -1,7 +1,7 @@
 {
   "name": "dstudio",
   "version": "1.0.0",
-  "description": "DStudio - Professional Code Editor",
+  "description": "DStudio - Professional Code Editor & Development Environment",
   "homepage": "https://dnyf-platform.github.io/dstudio",
   "scripts": {
     "start": "node server.js",
