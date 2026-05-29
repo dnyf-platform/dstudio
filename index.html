@@ -1,114 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>DStudio IDE</title>
-
-    <meta name="description" content="DStudio Mobile Web IDE" />
-    <meta name="theme-color" content="#667eea" />
-
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e27">
+    <title>DStudio IDE · Android Smart Studio</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
+<div id="app"></div>
 
-    <div id="app"></div>
+<script src="storage.js"></script>
+<script src="preview.js"></script>
+<script src="app.js"></script>
 
-    <!-- SVG ICONS -->
-    <svg style="display:none">
-
-        <!-- CODE -->
-        <symbol id="icon-code" viewBox="0 0 24 24">
-            <polyline points="16 18 22 12 16 6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-
-            <polyline points="8 6 2 12 8 18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-        </symbol>
-
-        <!-- FOLDER -->
-        <symbol id="icon-folder" viewBox="0 0 24 24">
-            <path
-                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-        </symbol>
-
-        <!-- PLUS -->
-        <symbol id="icon-plus" viewBox="0 0 24 24">
-            <line
-                x1="12"
-                y1="5"
-                x2="12"
-                y2="19"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-            />
-
-            <line
-                x1="5"
-                y1="12"
-                x2="19"
-                y2="12"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-            />
-        </symbol>
-
-        <!-- SAVE -->
-        <symbol id="icon-save" viewBox="0 0 24 24">
-            <path
-                d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-        </symbol>
-
-        <!-- EYE -->
-        <symbol id="icon-eye" viewBox="0 0 24 24">
-            <path
-                d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-
-            <circle
-                cx="12"
-                cy="12"
-                r="3"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-            />
-        </symbol>
-
-    </svg>
-
-    <script src="script.js"></script>
-
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+        window.dstudio = new DStudioApp();
+    });
+</script>
 </body>
 </html>
