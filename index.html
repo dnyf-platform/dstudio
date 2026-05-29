@@ -1,16 +1,231 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DStudio</title>
-</head>
-<body>
-    <div id="root"></div>
+    <meta name="description" content="DStudio - Professional Code Editor">
+    <meta name="theme-color" content="#667eea">
+    <title>DStudio | Code Editor & IDE</title>
+    
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
-    <!-- Rest of your HTML here -->
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background: #0a0e27; color: #e0e0e0; -webkit-font-smoothing: antialiased; }
+        #root { width: 100%; height: 100%; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(102, 126, 234, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(102, 126, 234, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(102, 126, 234, 0.5); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { Code2, Play, Save, Plus, Eye, Terminal, FileText, Folder, Download } = lucide;
+
+        const DStudio = () => {
+            const [view, setView] = useState('dashboard');
+            const [projects, setProjects] = useState([]);
+            const [currentProject, setCurrentProject] = useState(null);
+            const [files, setFiles] = useState([]);
+            const [activeFile, setActiveFile] = useState(null);
+            const [showPreview, setShowPreview] = useState(false);
+            const [consoleOutput, setConsoleOutput] = useState([]);
+            const editorRef = useRef(null);
+
+            useEffect(() => {
+                const sampleProject = {
+                    id: 1,
+                    name: 'Welcome Project',
+                    type: 'html-css-js',
+                    created: new Date(),
+                    files: [
+                        { id: 1, name: 'index.html', type: 'html', content: '<!DOCTYPE html>\n<html>\n<head><title>Welcome</title></head>\n<body><h1>🚀 Welcome to DStudio</h1><p>Edit HTML, CSS, and JavaScript</p><button id="btn">Click Me!</button><div id="output"></div></body>\n</html>' },
+                        { id: 2, name: 'style.css', type: 'css', content: 'body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: Arial; display: flex; align-items: center; justify-content: center; min-height: 100vh; }\nh1 { color: white; }\nbutton { padding: 10px 20px; background: white; color: #667eea; border: none; border-radius: 5px; cursor: pointer; }' },
+                        { id: 3, name: 'script.js', type: 'javascript', content: 'const btn = document.getElementById("btn");\nconst output = document.getElementById("output");\nlet count = 0;\nbtn.addEventListener("click", () => {\n  count++;\n  output.textContent = `Clicked ${count} times!`;\n});' }
+                    ]
+                };
+                setProjects([sampleProject]);
+                setCurrentProject(sampleProject);
+                setFiles(sampleProject.files);
+                setActiveFile(sampleProject.files[0]);
+            }, []);
+
+            const createNewProject = () => {
+                const newProject = {
+                    id: Date.now(),
+                    name: `Project ${projects.length + 1}`,
+                    type: 'html-css-js',
+                    created: new Date(),
+                    files: [{ id: 1, name: 'index.html', type: 'html', content: '<!DOCTYPE html>\n<html>\n<head><title>New Project</title></head>\n<body><h1>Hello World!</h1></body>\n</html>' }]
+                };
+                setProjects([...projects, newProject]);
+                setCurrentProject(newProject);
+                setFiles(newProject.files);
+                setActiveFile(newProject.files[0]);
+                setView('editor');
+            };
+
+            const updateFileContent = (content) => {
+                const updatedFiles = files.map(f => f.id === activeFile.id ? { ...f, content } : f);
+                setFiles(updatedFiles);
+                setActiveFile({ ...activeFile, content });
+                setConsoleOutput([...consoleOutput, { type: 'save', message: `✅ Saved ${activeFile.name}` }]);
+            };
+
+            const runCode = () => {
+                const htmlFile = files.find(f => f.type === 'html');
+                const cssFile = files.find(f => f.type === 'css');
+                const jsFile = files.find(f => f.type === 'javascript');
+
+                if (htmlFile) {
+                    const iframeContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${cssFile ? cssFile.content : ''}</style></head><body>${htmlFile.content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')}<script>${jsFile ? jsFile.content : ''}<\/script></body></html>`;
+                    const iframe = document.getElementById('preview-iframe');
+                    if (iframe) {
+                        iframe.srcdoc = iframeContent;
+                        setConsoleOutput([...consoleOutput, { type: 'success', message: '✅ Code executed!' }]);
+                    }
+                }
+            };
+
+            const addNewFile = () => {
+                const type = ['html', 'css', 'javascript'][Math.floor(Math.random() * 3)];
+                const ext = { html: '.html', css: '.css', javascript: '.js' }[type];
+                const newFile = { id: Date.now(), name: `file${ext}`, type, content: '' };
+                const updatedFiles = [...files, newFile];
+                setFiles(updatedFiles);
+                setActiveFile(newFile);
+            };
+
+            const deleteFile = (fileId) => {
+                if (files.length > 1) {
+                    const updatedFiles = files.filter(f => f.id !== fileId);
+                    setFiles(updatedFiles);
+                    setActiveFile(updatedFiles[0]);
+                }
+            };
+
+            if (view === 'dashboard') {
+                return (
+                    <div style={{ minHeight: '100vh', background: '#0a0e27', color: '#e0e0e0', overflow: 'hidden' }}>
+                        <style>{`
+                            .dashboard-header { padding: 20px 40px; background: rgba(10, 14, 39, 0.8); border-bottom: 1px solid rgba(102, 126, 234, 0.1); }
+                            .logo { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+                            .dashboard-content { padding: 80px 40px; max-width: 1400px; margin: 0 auto; overflow-y: auto; max-height: calc(100vh - 80px); }
+                            .dashboard-title { font-size: 56px; font-weight: 800; margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+                            .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin: 40px 0; }
+                            .project-card { background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 16px; padding: 24px; cursor: pointer; transition: all 0.3s; }
+                            .project-card:hover { transform: translateY(-8px); border-color: rgba(102, 126, 234, 0.5); box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15); }
+                            .project-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+                            .new-project-card { background: rgba(102, 126, 234, 0.05); border: 2px dashed rgba(102, 126, 234, 0.3); border-radius: 16px; padding: 24px; display: flex; align-items: center; justify-content: center; min-height: 150px; cursor: pointer; transition: all 0.3s; }
+                            .new-project-card:hover { border-color: rgba(102, 126, 234, 0.6); }
+                            button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+                        `}</style>
+
+                        <div className="dashboard-header">
+                            <div className="logo"><Code2 size={32} /><span>DStudio</span></div>
+                        </div>
+
+                        <div className="dashboard-content">
+                            <h1 className="dashboard-title">Build the Web, Your Way</h1>
+                            <p style={{ fontSize: 20, color: '#a0a0a0', marginBottom: 40 }}>Professional code editor for web development</p>
+
+                            <div className="projects-grid">
+                                {projects.map(project => (
+                                    <div key={project.id} className="project-card" onClick={() => { setCurrentProject(project); setFiles(project.files); setActiveFile(project.files[0]); setView('editor'); }}>
+                                        <div className="project-icon"><Folder size={24} color="white" /></div>
+                                        <div style={{ fontSize: 18, fontWeight: 600 }}>{project.name}</div>
+                                        <div style={{ fontSize: 14, color: '#667eea' }}>{project.type}</div>
+                                    </div>
+                                ))}
+                                <div className="new-project-card" onClick={createNewProject}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: '#667eea' }}>
+                                        <Plus size={32} />
+                                        <span>New Project</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0e27', color: '#e0e0e0' }}>
+                    <style>{`
+                        .editor-header { background: #0f1527; border-bottom: 1px solid rgba(102, 126, 234, 0.1); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+                        .editor-tabs { display: flex; gap: 8px; overflow-x: auto; flex: 1; }
+                        .editor-tab { padding: 8px 16px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 6px; cursor: pointer; font-size: 13px; color: #a0a0a0; display: flex; align-items: center; gap: 8px; }
+                        .editor-tab.active { background: rgba(102, 126, 234, 0.2); color: #e0e0e0; }
+                        .editor-btn { padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+                        .editor-workspace { display: flex; flex: 1; overflow: hidden; }
+                        .editor-sidebar { width: 250px; background: #0a0e27; border-right: 1px solid rgba(102, 126, 234, 0.1); overflow-y: auto; padding: 16px 0; }
+                        .file-item { padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #a0a0a0; font-size: 13px; }
+                        .file-item:hover { background: rgba(102, 126, 234, 0.1); }
+                        .file-item.active { background: rgba(102, 126, 234, 0.2); color: #667eea; }
+                        .editor-main { flex: 1; display: flex; flex-direction: column; }
+                        .editor-code { flex: 1; background: #0f1527; overflow: hidden; }
+                        textarea { width: 100%; height: 100%; background: #0f1527; color: #e0e0e0; border: none; padding: 16px; font-family: monospace; font-size: 14px; line-height: 1.6; resize: none; outline: none; }
+                        .editor-console { background: #0a0e27; border-top: 1px solid rgba(102, 126, 234, 0.1); padding: 16px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; }
+                        .preview-pane { flex: 1; background: white; border-left: 1px solid rgba(102, 126, 234, 0.1); overflow: hidden; }
+                        iframe { width: 100%; height: 100%; border: none; }
+                    `}</style>
+
+                    <div className="editor-header">
+                        <button onClick={() => setView('dashboard')} style={{ background: 'rgba(102, 126, 234, 0.1)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.2)' }}>← Back</button>
+                        <div className="editor-tabs">
+                            {files.map(file => (
+                                <div key={file.id} className={`editor-tab ${activeFile?.id === file.id ? 'active' : ''}`} onClick={() => setActiveFile(file)}>
+                                    {file.name} <span onClick={(e) => { e.stopPropagation(); deleteFile(file.id); }} style={{ cursor: 'pointer' }}>×</span>
+                                </div>
+                            ))}
+                            <button onClick={addNewFile} style={{ background: 'rgba(102, 126, 234, 0.1)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.2)' }}>+ Add</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={runCode} className="editor-btn"><Play size={16} /> Run</button>
+                            <button onClick={() => updateFileContent(editorRef.current.value)} className="editor-btn" style={{ background: 'rgba(102, 126, 234, 0.1)', color: '#667eea' }}><Save size={16} /> Save</button>
+                            <button onClick={() => setShowPreview(!showPreview)} className="editor-btn" style={{ background: 'rgba(102, 126, 234, 0.1)', color: '#667eea' }}><Eye size={16} /> {showPreview ? 'Hide' : 'Show'}</button>
+                        </div>
+                    </div>
+
+                    <div className="editor-workspace">
+                        <div className="editor-sidebar">
+                            <div style={{ padding: '8px 16px', fontSize: 12, fontWeight: 600, color: '#667eea' }}>📁 Files</div>
+                            {files.map(file => (
+                                <div key={file.id} className={`file-item ${activeFile?.id === file.id ? 'active' : ''}`} onClick={() => setActiveFile(file)}>
+                                    <FileText size={14} /> {file.name}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="editor-main">
+                            <div className="editor-code">
+                                <textarea ref={editorRef} value={activeFile?.content || ''} onChange={(e) => updateFileContent(e.target.value)} placeholder="Write your code..." spellCheck="false" />
+                            </div>
+                            <div className="editor-console">
+                                {consoleOutput.map((line, idx) => (
+                                    <div key={idx} style={{ color: line.type === 'success' ? '#4caf50' : '#a0a0a0', marginBottom: 4 }}>
+                                        [{line.type.toUpperCase()}] {line.message}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {showPreview && <div className="preview-pane"><iframe id="preview-iframe" title="preview"></iframe></div>}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DStudio />);
+    </script>
 </body>
 </html>
