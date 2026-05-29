@@ -1,7 +1,0 @@
-* text=auto
-*.html text
-*.js text
-*.json text
-*.md text
-*.yml text eol=lf
-*.bat text eol=crlf
